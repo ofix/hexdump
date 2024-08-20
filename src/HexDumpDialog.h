@@ -24,24 +24,27 @@
 #include <wx/combobox.h>
 #include "HexDumpPanel.h"
 #include "TagWindow.h"
+#include "PaddingTextCtrl.h"
 
 ///////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Class HexDumpDialog
 ///////////////////////////////////////////////////////////////////////////////
+
 class HexDumpDialog : public wxDialog
 {
 public:
     HexDumpDialog( wxWindow* parent, int id = wxID_ANY, wxString title = wxT("对话框"), wxPoint pos = wxDefaultPosition, wxSize size = wxDefaultSize, int style = wxDEFAULT_DIALOG_STYLE );
     void OnPcieDeviceChange(wxCommandEvent& event);
     void OnSaveBtn(wxCommandEvent& event);
+    std::vector<HilightAddr> ParseAddrs(const std::string& addrs);
 private:
     wxComboBox* m_listBoxDevices;
     HexDumpPanel* m_panel;
     wxButton* m_saveBtn;
     wxTextCtrl* m_textCtrlRootPath;
-    wxTextCtrl* m_textCtrlHighlightAddr;
+    PaddingTextCtrl* m_textCtrlHighlightAddr;
     TagWindow* m_tagWnd;
 
     DECLARE_EVENT_TABLE()

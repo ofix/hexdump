@@ -4,12 +4,12 @@
 
 
 #define TAG_SPACE 10
-#define TAG_PADDING 4
+#define TAG_PADDING 6
 #define TAG_MARGIN 10
 #define TAG_HEIGHT 24
 
 TagWindow::TagWindow(wxWindow *parent, wxWindowID id, const wxPoint &pos, const wxSize &size, long style, const wxString &name):
-    wxVScrolledWindow(parent,id,pos,size,style,name),m_activeTagPos(0)
+    wxVScrolledWindow(parent,id,pos,size,style,name),m_enableClose(false),m_activeTagPos(0)
 {
     SetBackgroundStyle(wxBG_STYLE_PAINT);
     Bind(wxEVT_PAINT,&TagWindow::OnPaint,this);
@@ -24,13 +24,13 @@ TagWindow::~TagWindow()
 void TagWindow::OnClick(wxMouseEvent& event)
 {
     wxPoint pt = event.GetPosition();
-    std::cout<<"click at: "<<pt.x<<","<<pt.y<<std::endl;
     size_t iRowBegin = GetVisibleRowsBegin();
     size_t iRowEnd = GetVisibleRowsEnd();
     size_t  pos=0;
     int newActiveTagPos = -1;
-    for(size_t iRow = 0; iRow<iRowBegin; iRow++){
-       pos += m_visibleTags[iRow].size();
+    for(size_t iRow = 0; iRow<iRowBegin; iRow++)
+    {
+        pos += m_visibleTags[iRow].size();
     }
 
     for(size_t iRow=iRowBegin; iRow<iRowEnd; iRow++)
@@ -38,8 +38,16 @@ void TagWindow::OnClick(wxMouseEvent& event)
         for(size_t iCol =0; iCol<m_visibleTags[iRow].size(); iCol++)
         {
             Tag tag = m_visibleTags[iRow][iCol];
-             wxRect visible_rect(tag.rect.x,tag.rect.y - (iRowBegin)*(TAG_HEIGHT+TAG_MARGIN),tag.rect.width,tag.rect.height);
-            if(visible_rect.Contains(pt))
+            wxRect visible_rect(tag.rect.x,tag.rect.y - (iRowBegin)*(TAG_HEIGHT+TAG_MARGIN),tag.rect.width,tag.rect.height);
+            wxRect close_rect(visible_rect.x + TAG_PADDING + tag.name_width + 12,visible_rect.y+8, 8,tag.rect.height-16);
+            // 优先检查是否是关闭按钮
+            if(m_enableClose && close_rect.Contains(pt))
+            {
+                // 检查删除的是否是活动标签，如果不是，默认第一个高亮
+                RemoveTag(pos);
+                break;
+            }
+            else if(visible_rect.Contains(pt))
             {
                 m_visibleTags[iRow][iCol].active = true;
                 m_tags[pos].active = true;
@@ -50,8 +58,6 @@ void TagWindow::OnClick(wxMouseEvent& event)
             pos += 1;
         }
     }
-
-    std::cout<<"老高亮: "<<m_activeTagPos<<std::endl;
 
     if(newActiveTagPos != -1 && newActiveTagPos != m_activeTagPos)
     {
@@ -66,7 +72,6 @@ void TagWindow::OnClick(wxMouseEvent& event)
                     m_visibleTags[iRow][iCol].active = false;
                     m_tags[m_activeTagPos].active = false;
                     // 取消之前的的高亮
-                    std::cout<<"之前高亮取消: " <<m_activeTagPos<<std::endl;
                     m_activeTagPos = newActiveTagPos;
                     break;
                 }
@@ -94,31 +99,56 @@ void TagWindow::OnPaint(wxPaintEvent& event)
         {
             Tag tag = m_visibleTags[iRow][iCol];
             wxRect visible_rect(tag.rect.x,tag.rect.y - (iRowBegin)*(TAG_HEIGHT+TAG_MARGIN),tag.rect.width,tag.rect.height);
+            wxRect text_rect(visible_rect.x+TAG_PADDING,visible_rect.y,tag.name_width,tag.rect.height);
+            wxRect close_rect(visible_rect.x + TAG_PADDING + tag.name_width + 12,visible_rect.y+8, 8,tag.rect.height-16);
             if(!tag.active)
             {
                 // 绘制圆角边框
-                wxPen inactivePen(wxColor(0,0,0),1,wxPENSTYLE_SOLID);
+                wxBrush activeBrush(wxColor(243, 243, 243),wxBRUSHSTYLE_SOLID);
+                dc.SetBrush(activeBrush);
+                wxPen inactivePen(wxColor(222,222,222),1,wxPENSTYLE_SOLID);
                 dc.SetPen(inactivePen);
                 dc.DrawRoundedRectangle(visible_rect,2);
-                // 居中绘制文本
-                dc.SetTextForeground(wxColor(0,0,0));
-                dc.DrawLabel(tag.name,visible_rect,wxALIGN_CENTER|wxALIGN_CENTER_VERTICAL);
-                //
+                // 靠左绘制文本
+                dc.SetTextForeground(wxColor(66,66,66));
+                dc.DrawLabel(tag.name,text_rect,wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL);
+                // 绘制关闭按钮
+                if(m_enableClose){
+                  DrawCloseBtn(&dc,close_rect,false);
+                }
             }
             else
             {
                 // 绘制圆角边框
-                wxPen activePen(wxColor(255,0,0),1,wxPENSTYLE_SOLID);
+                wxBrush activeBrush(wxColor(249, 219, 249),wxBRUSHSTYLE_SOLID);
+                dc.SetBrush(activeBrush);
+                wxPen activePen(wxColor(249,119,249),1,wxPENSTYLE_SOLID);
                 dc.SetPen(activePen);
                 dc.DrawRoundedRectangle(visible_rect,2);
-                // 居中绘制文本
-                dc.SetTextForeground(wxColor(255,0,0));
-                dc.DrawLabel(tag.name,visible_rect,wxALIGN_CENTER|wxALIGN_CENTER_VERTICAL);
+                // 靠左绘制文本
+                dc.SetTextForeground(wxColor(249, 54, 249));
+                dc.DrawLabel(tag.name,text_rect,wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL);
+                // 绘制关闭按钮
+                if(m_enableClose){
+                  DrawCloseBtn(&dc,close_rect,true);
+                }
             }
         }
     }
 }
 
+void TagWindow::DrawCloseBtn(wxDC* pDC, wxRect& rect, bool active)
+{
+    wxPen pen = wxPen(wxColor(0,0,0),1,wxPENSTYLE_SOLID);
+    if(active)
+    {
+        pen.SetColour(wxColor(255,0,0));
+    }
+    pDC->DrawLine(rect.x,rect.y,rect.x+rect.width,rect.y+rect.height);
+    pDC->DrawLine(rect.x,rect.y+rect.height,rect.x+rect.width,rect.y);
+    pDC->DrawPoint(rect.x+rect.width,rect.y+rect.height);
+    pDC->DrawPoint(rect.x+rect.width,rect.y);
+}
 
 wxCoord TagWindow::OnGetRowHeight(size_t row) const
 {
@@ -127,12 +157,17 @@ wxCoord TagWindow::OnGetRowHeight(size_t row) const
 
 void TagWindow::AddTags(std::vector<std::string>& tags)
 {
+    if(tags.size() == 0)
+    {
+        return;
+    }
     for(auto& tag_name: tags)
     {
         Tag tag;
         tag.name = tag_name;
         tag.rect = wxRect(0,0,0,0);
         tag.active = false;
+        tag.name_width = 0;
         m_tags.push_back(tag);
     }
     m_tags[0].active = true;
@@ -146,6 +181,7 @@ void TagWindow::AddTag(const std::string& tag_name)
     Tag tag;
     tag.name = tag_name;
     tag.rect = wxRect(0,0,0,0);
+    tag.name_width = 0;
     tag.active = false;
     m_tags.push_back(tag);
     ReLayout();
@@ -162,6 +198,7 @@ void TagWindow::RemoveTag(const std::string& tag_name)
         }
         i++;
     }
+    EnsureOneActive();
     ReLayout();
 }
 
@@ -172,7 +209,24 @@ void TagWindow::RemoveTag(size_t pos)
         return;
     }
     m_tags.erase(m_tags.begin()+pos);
+    EnsureOneActive();
     ReLayout();
+}
+
+void TagWindow::EnsureOneActive()
+{
+    bool has_active = false;
+    for(auto& tag:m_tags)
+    {
+        if(tag.active)
+        {
+            has_active = true;
+        }
+    }
+    if(!has_active && m_tags.size() >0)
+    {
+        m_tags[0].active = true;
+    }
 }
 
 void TagWindow::ReLayout()
@@ -188,7 +242,8 @@ void TagWindow::ReLayout()
     std::vector<Tag> row;
     for(size_t i=0; i<m_tags.size(); i++)
     {
-        size_t width = dc.GetTextExtent(m_tags[i].name).GetWidth()+TAG_PADDING*2+24;
+        size_t name_width = dc.GetTextExtent(m_tags[i].name).GetWidth();
+        size_t width = (name_width+TAG_PADDING*2) + (m_enableClose?24:0);
         if(offset_x+width> MAX_WIDTH)
         {
             offset_y += TAG_MARGIN+TAG_HEIGHT; // 另起一行
@@ -200,7 +255,9 @@ void TagWindow::ReLayout()
         }
         m_tags[i].rect.x = offset_x;
         m_tags[i].rect.y = offset_y;
+        m_tags[i].name_width = name_width;
         m_tags[i].rect.width = width;
+        std::cout<<"name_width: "<<name_width<<" width: "<<width<<std::endl;
         m_tags[i].rect.height = TAG_HEIGHT;
         row.push_back(m_tags[i]);
         offset_x += width + TAG_MARGIN;

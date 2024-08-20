@@ -12,6 +12,12 @@ struct word
     std::string hex;
 };
 
+struct HilightAddr{
+   int offset;
+   int size;
+   wxColor color;
+};
+
 
 class HexDumpPanel : public wxVScrolledWindow
 {
@@ -26,16 +32,17 @@ public:
     std::string GetConfigFilePath(size_t n);
     void SetVisualSize(size_t size);
     bool HilightWords(size_t pos,size_t word_count,wxColor background_clr =wxColor(255,255,0));
+    void SetHilightAddrs(const std::vector<HilightAddr>& hilight_addrs);
     std::string ToHex(int num,int nWidth=2);
     int GetHexDigits(int num);
     size_t GetOffsetX();
     size_t GetOffsetY();
     wxRect GetCellRect(size_t iRow, size_t iCol);
     void OnPaint(wxPaintEvent& event);
-
     virtual wxCoord OnGetRowHeight(size_t row) const;
 
 private:
+    static std::vector<HilightAddr> m_hilightCells;
     std::string m_dirRoot;
     size_t m_visualSize; // 最大显示的区域大小，默认等于PCIe 配置文件大小，允许动态调节
     size_t m_offsetX;

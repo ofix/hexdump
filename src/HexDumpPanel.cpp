@@ -249,7 +249,19 @@ bool HexDumpPanel::LoadPcieConfigFile(const std::string& file_path)
     m_visualSize = m_words.size();
     size_t rows = m_visualSize / 16;
     SetRowCount(rows+1);
+    for(HilightAddr& cell: m_hilightCells){
+      HilightWords(cell.offset,cell.size,cell.color);
+    }
     return true;
+}
+
+std::vector<HilightAddr> HexDumpPanel::m_hilightCells = {};
+
+void HexDumpPanel::SetHilightAddrs(const std::vector<HilightAddr>& hilight_addrs){
+   m_hilightCells = hilight_addrs;
+   for(HilightAddr& cell: m_hilightCells){
+      HilightWords(cell.offset,cell.size,cell.color);
+   }
 }
 
 bool HexDumpPanel::HilightWords(size_t pos,size_t word_count,wxColor background_clr)
