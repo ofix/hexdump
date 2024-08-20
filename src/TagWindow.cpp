@@ -1,7 +1,7 @@
 #include "TagWindow.h"
 #include <wx/dc.h>
 #include <wx/dcbuffer.h>
-
+#include "util/Global.h"
 
 #define TAG_SPACE 10
 #define TAG_PADDING 6
@@ -52,7 +52,6 @@ void TagWindow::OnClick(wxMouseEvent& event)
                 m_visibleTags[iRow][iCol].active = true;
                 m_tags[pos].active = true;
                 newActiveTagPos = pos;
-                std::cout<<"新高亮: "<<pos<<std::endl;
                 break;
             }
             pos += 1;
@@ -79,6 +78,14 @@ void TagWindow::OnClick(wxMouseEvent& event)
             }
         }
     }
+    // 创建并发送自定义事件
+    TagChangedEvent tagEvent(wxEVT_TAG_CHANGED);
+    tagEvent.SetAddr(hex_to_dec<int>(m_tags[m_activeTagPos].name));
+    tagEvent.SetSelection(pos);
+    // GetEventHandler()->AddPendingEvent(tagEvent);
+    wxPostEvent(this->GetParent(), tagEvent);
+    std::cout<<"发送消息: "<<newActiveTagPos<<std::endl;
+
     RefreshAll();
 }
 
@@ -113,8 +120,9 @@ void TagWindow::OnPaint(wxPaintEvent& event)
                 dc.SetTextForeground(wxColor(66,66,66));
                 dc.DrawLabel(tag.name,text_rect,wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL);
                 // 绘制关闭按钮
-                if(m_enableClose){
-                  DrawCloseBtn(&dc,close_rect,false);
+                if(m_enableClose)
+                {
+                    DrawCloseBtn(&dc,close_rect,false);
                 }
             }
             else
@@ -129,8 +137,9 @@ void TagWindow::OnPaint(wxPaintEvent& event)
                 dc.SetTextForeground(wxColor(249, 54, 249));
                 dc.DrawLabel(tag.name,text_rect,wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL);
                 // 绘制关闭按钮
-                if(m_enableClose){
-                  DrawCloseBtn(&dc,close_rect,true);
+                if(m_enableClose)
+                {
+                    DrawCloseBtn(&dc,close_rect,true);
                 }
             }
         }
@@ -161,6 +170,7 @@ void TagWindow::AddTags(std::vector<std::string>& tags)
     {
         return;
     }
+    m_tags.clear();
     for(auto& tag_name: tags)
     {
         Tag tag;

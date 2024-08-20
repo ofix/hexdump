@@ -4,6 +4,7 @@
 #include <wx/vscroll.h>
 #include <vector>
 #include <string>
+#include "events/TagChangedEvent.h"
 
 struct Tag{
    std::string name;

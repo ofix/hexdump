@@ -109,6 +109,15 @@ HexDumpDialog::HexDumpDialog(wxWindow *parent, int id, wxString title,
   this->SetSizer(bSizer1);
   this->Layout();
   bSizer1->Fit(this);
+
+  Bind(wxEVT_TAG_CHANGED, &HexDumpDialog::OnTagChanged,this);
+}
+
+void HexDumpDialog::OnTagChanged(TagChangedEvent& event){
+   int addr = event.GetAddr();
+   int nRows = addr / 16;
+   std::cout<<"scroll to line: "<<nRows<<std::endl;
+   m_panel->ScrollToRow(nRows);
 }
 
 void HexDumpDialog::OnPcieDeviceChange(wxCommandEvent &event) {
@@ -125,7 +134,17 @@ void HexDumpDialog::OnSaveBtn(wxCommandEvent &event) {
   std::string addrs = hilight_addrs.ToStdString();
   std::vector<HilightAddr> result = ParseAddrs(addrs);
   m_panel->SetHilightAddrs(result);
+  UpdateTagWnd(result);
   m_panel->RefreshAll();
+}
+
+void HexDumpDialog::UpdateTagWnd(std::vector<HilightAddr>& addrs){
+   std::vector<std::string> vecHex;
+   for(HilightAddr& addr:addrs){
+      std::string hex = dec_to_hex<int>(addr.offset);
+      vecHex.push_back(hex);
+   }
+   m_tagWnd->AddTags(vecHex);
 }
 
 std::vector<HilightAddr> HexDumpDialog::ParseAddrs(const std::string &addrs) {
@@ -135,6 +154,7 @@ std::vector<HilightAddr> HexDumpDialog::ParseAddrs(const std::string &addrs) {
   std::regex pattern2(R"((0x[0-9A-Fa-f]+)\s*,\s*([1-9]|[1-9][0-9]+)\s*)");
   std::regex pattern3(
       R"((0x[0-9A-Fa-f]+)\s*,\s*([1-9]|[1-9][0-9]+)\s*,\s*[rR][gG][bB]\((\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5]),(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5]),(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\)\s*)");
+
   for (auto &line : lines) {
     std::smatch matches;
     if (std::regex_match(line, matches, pattern1)) {

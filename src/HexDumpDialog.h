@@ -38,7 +38,10 @@ public:
     HexDumpDialog( wxWindow* parent, int id = wxID_ANY, wxString title = wxT("对话框"), wxPoint pos = wxDefaultPosition, wxSize size = wxDefaultSize, int style = wxDEFAULT_DIALOG_STYLE );
     void OnPcieDeviceChange(wxCommandEvent& event);
     void OnSaveBtn(wxCommandEvent& event);
+    void OnTagChanged(TagChangedEvent& event);
+    void UpdateTagWnd(std::vector<HilightAddr>& addrs);
     std::vector<HilightAddr> ParseAddrs(const std::string& addrs);
+
 private:
     wxComboBox* m_listBoxDevices;
     HexDumpPanel* m_panel;

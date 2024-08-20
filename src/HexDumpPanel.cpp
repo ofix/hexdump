@@ -226,6 +226,12 @@ wxCoord HexDumpPanel::OnGetRowHeight(size_t row) const
     return CELL_HEIGHT;
 }
 
+bool HexDumpPanel::ScrollToRow(size_t row){
+   size_t total_height = row*CELL_HEIGHT+GetOffsetY();
+   Scroll(0,total_height);
+   return true;
+}
+
 wxRect HexDumpPanel::GetCellRect(size_t iRow, size_t iCol)
 {
     static size_t offset_x = GetOffsetX();
