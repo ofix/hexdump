@@ -19,6 +19,11 @@ wxString PaddingTextCtrl::GetValue()
     return m_pTextCtrl->GetValue();
 }
 
+void PaddingTextCtrl::AppendText(const wxString& text)
+{
+   m_pTextCtrl->AppendText(text);
+}
+
 void PaddingTextCtrl::SetPadding(const wxSize& padding)
 {
     this->m_padding = padding;

@@ -197,6 +197,7 @@ void TagWindow::AddTag(const std::string& tag_name)
     tag.name_width = 0;
     tag.active = false;
     m_tags.push_back(tag);
+    EnsureOneActive();
     ReLayout();
 }
 
@@ -239,6 +240,7 @@ void TagWindow::EnsureOneActive()
     if(!has_active && m_tags.size() >0)
     {
         m_tags[0].active = true;
+        m_activeTagPos = 0;
     }
 }
 

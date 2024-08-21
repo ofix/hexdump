@@ -42,6 +42,9 @@ public:
     void UpdateTagWnd(std::vector<HilightAddr>& addrs);
     std::vector<HilightAddr> ParseAddrs(const std::string& addrs);
 
+    void OnInputChanged();
+
+
 private:
     wxComboBox* m_listBoxDevices;
     HexDumpPanel* m_panel;

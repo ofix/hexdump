@@ -51,7 +51,7 @@ HexDumpDialog::HexDumpDialog(wxWindow *parent, int id, wxString title,
   // wxStaticText
   wxStaticText *staticTextPath =
       new wxStaticText(this, wxID_ANY, wxT("PCIe 设备根路径"));
-  bSizer2->Add(staticTextPath, 0, wxTOP | wxRIGHT, 20);
+  bSizer2->Add(staticTextPath, 0, wxTOP | wxRIGHT, 0);
   // wxTextCtrl
   m_textCtrlRootPath =
       new wxTextCtrl(this, wxID_ANY, wxT("/home/greatwall/work/pcie/devices"),
@@ -108,6 +108,11 @@ HexDumpDialog::HexDumpDialog(wxWindow *parent, int id, wxString title,
   bSizer1->Fit(this);
 
   Bind(wxEVT_TAG_CHANGED, &HexDumpDialog::OnTagChanged,this);
+
+  // 初始化一些数据
+  m_textCtrlHighlightAddr->AppendText("0x34,4\n");
+  m_textCtrlHighlightAddr->AppendText("0x40,8\n");
+  OnInputChanged();
 }
 
 void HexDumpDialog::OnTagChanged(TagChangedEvent& event){
@@ -122,6 +127,18 @@ void HexDumpDialog::OnPcieDeviceChange(wxCommandEvent &event) {
 }
 
 void HexDumpDialog::OnSaveBtn(wxCommandEvent &event) {
+  int selection = m_listBoxDevices->GetSelection();
+  std::string device_path = m_panel->GetConfigFilePath(selection);
+  m_panel->LoadPcieConfigFile(device_path);
+  wxString hilight_addrs = m_textCtrlHighlightAddr->GetValue();
+  std::string addrs = hilight_addrs.ToStdString();
+  std::vector<HilightAddr> result = ParseAddrs(addrs);
+  m_panel->SetHilightAddrs(result);
+  UpdateTagWnd(result);
+  m_panel->RefreshAll();
+}
+
+void HexDumpDialog::OnInputChanged(){
   int selection = m_listBoxDevices->GetSelection();
   std::string device_path = m_panel->GetConfigFilePath(selection);
   m_panel->LoadPcieConfigFile(device_path);

@@ -3,6 +3,7 @@
 #include <wx/dcbuffer.h>
 #include <wx/event.h>
 #include <wx/colour.h>
+#include <algorithm>
 
 ///// 文件夹相关头文件
 #include <dirent.h>
@@ -80,7 +81,37 @@ void HexDumpPanel::SetPcieConfigDirRoot(const std::string dir_path)
 {
     m_dirRoot = dir_path;
     // 查找所有子目录
-    m_devices = GetSubDirs(m_dirRoot);
+    std::vector<std::string> sub_dirs  = GetSubDirs(m_dirRoot);
+    for(auto& sub_dir: sub_dirs){
+        std::string prefix = sub_dir.substr(0,4);
+        if(prefix == "0000" || prefix == "0001" || prefix == "0002"){
+           m_devices.push_back(sub_dir);
+        }
+    }
+
+    std::sort(m_devices.begin(),m_devices.end(),[](const std::string& a, const std::string& b){
+        std::vector<std::string> partsA, partsB;
+        size_t startA = 0, startB = 0;
+        size_t endA, endB;
+        while ((endA = a.find(':', startA))!= std::string::npos) {
+            partsA.push_back(a.substr(startA, endA - startA));
+            startA = endA + 1;
+        }
+        partsA.push_back(a.substr(startA));
+
+        while ((endB = b.find(':', startB))!= std::string::npos) {
+            partsB.push_back(b.substr(startB, endB - startB));
+            startB = endB + 1;
+        }
+        partsB.push_back(b.substr(startB));
+
+        for (size_t i = 0; i < partsA.size() && i < partsB.size(); ++i) {
+            if (partsA[i] < partsB[i]) return true;
+            if (partsA[i] > partsB[i]) return false;
+        }
+        return partsA.size() < partsB.size();
+    });
+
     for(auto& device: m_devices)
     {
         std::string config_file = m_dirRoot + "/"+device+"/config";
@@ -170,13 +201,13 @@ void HexDumpPanel::OnPaint(wxPaintEvent& event)
                 }
                 else
                 {
-                    wxBrush brush(w.clr);
+                    wxBrush brush(wxColor(249, 219, 249));
                     dc.SetBrush(brush);
                     dc.SetPen(*wxTRANSPARENT_PEN);
                     dc.DrawRectangle(cell);
                     dc.SetTextBackground(w.clr);
                     dc.SetBackgroundMode(wxBRUSHSTYLE_TRANSPARENT);
-                    dc.SetTextForeground(wxColor(255,255,255));
+                    dc.SetTextForeground(w.clr);
                 }
 
                 dc.DrawLabel(w.hex,cell,wxALIGN_CENTER|wxALIGN_CENTER_VERTICAL);

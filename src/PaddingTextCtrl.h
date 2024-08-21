@@ -15,6 +15,7 @@ class PaddingTextCtrl : public wxPanel
       void SetPadding(const wxSize& padding);
 
       wxString GetValue();
+      void AppendText(const wxString& text);
 
    private:
    wxTextCtrl* m_pTextCtrl;
