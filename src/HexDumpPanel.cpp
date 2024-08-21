@@ -133,10 +133,13 @@ void HexDumpPanel::OnPaint(wxPaintEvent& event)
     size_t iRowBegin = GetVisibleRowsBegin();
     size_t iRowEnd = GetVisibleRowsEnd();
     int nDigits = GetHexDigits(m_visualSize);
+    // wxFont boldFont(12, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD);
+    // wxFont normalFont = dc.GetFont();
     for(size_t iRow=iRowBegin; iRow<iRowEnd; iRow++)
     {
         if(iRow==0)
         {
+            // dc.SetFont(boldFont);
             for(size_t iCol=0; iCol<16; iCol++)
             {
                 wxRect rc(GetOffsetX()+iCol*CELL_WIDTH,0,CELL_WIDTH,CELL_HEIGHT);
@@ -151,8 +154,10 @@ void HexDumpPanel::OnPaint(wxPaintEvent& event)
 
             dc.SetBackgroundMode(wxBRUSHSTYLE_TRANSPARENT);
             dc.SetTextForeground(wxColor(0,0,0));
+            // dc.SetFont(boldFont);
             dc.DrawLabel(addr,wxRect(0,iVisualRow*30,GetOffsetX(),CELL_HEIGHT),wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL);
 
+            // dc.SetFont(normalFont);
             for(size_t iCol=0; iCol<16; iCol++)
             {
                 word w=m_words[(iRow-1)*16+ iCol];
@@ -226,11 +231,6 @@ wxCoord HexDumpPanel::OnGetRowHeight(size_t row) const
     return CELL_HEIGHT;
 }
 
-bool HexDumpPanel::ScrollToRow(size_t row){
-   size_t total_height = row*CELL_HEIGHT+GetOffsetY();
-   Scroll(0,total_height);
-   return true;
-}
 
 wxRect HexDumpPanel::GetCellRect(size_t iRow, size_t iCol)
 {

@@ -40,7 +40,6 @@ HexDumpDialog::HexDumpDialog(wxWindow *parent, int id, wxString title,
   bSizer1 = new wxBoxSizer(wxHORIZONTAL);
   m_panel = new HexDumpPanel(this, wxID_ANY, wxPoint(10, 8), wxSize(560, 480));
   m_panel->SetPcieConfigDirRoot("/home/greatwall/work/pcie/devices");
-  m_panel->HilightWords(0x34, 4, DEFAULT_HILIGHT_COLOR);
   bSizer1->Add(m_panel, 0, wxALL, 10);
 
   ///////////////////////////////////////////// 右列
@@ -78,8 +77,6 @@ HexDumpDialog::HexDumpDialog(wxWindow *parent, int id, wxString title,
 
   // TagWindow
   m_tagWnd = new TagWindow(this, wxID_ANY, wxPoint(10, 8), wxSize(240, 40));
-  std::vector<std::string> tags{"0x34", "0x40", "0xFF00", "0x0F22"};
-  m_tagWnd->AddTags(tags);
   bSizer2->Add(m_tagWnd, 0, wxTOP | wxRIGHT, 6);
 
   // wxStaticText
@@ -116,14 +113,12 @@ HexDumpDialog::HexDumpDialog(wxWindow *parent, int id, wxString title,
 void HexDumpDialog::OnTagChanged(TagChangedEvent& event){
    int addr = event.GetAddr();
    int nRows = addr / 16;
-   std::cout<<"scroll to line: "<<nRows<<std::endl;
    m_panel->ScrollToRow(nRows);
 }
 
 void HexDumpDialog::OnPcieDeviceChange(wxCommandEvent &event) {
   int selection = event.GetSelection();
   wxString choice = m_listBoxDevices->GetString(selection);
-  // std::cout<<"选择了: "<<choice<<std::endl;
 }
 
 void HexDumpDialog::OnSaveBtn(wxCommandEvent &event) {

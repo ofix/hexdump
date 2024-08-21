@@ -74,6 +74,8 @@
 		<Unit filename="TagWindow.cpp" />
 		<Unit filename="TagWindow.h" />
 		<Unit filename="WxWizDialog.fbp" />
+		<Unit filename="events/TagChangedEvent.cpp" />
+		<Unit filename="events/TagChangedEvent.h" />
 		<Unit filename="util/Color.h" />
 		<Unit filename="util/ConsoleTable.cpp" />
 		<Unit filename="util/ConsoleTable.h" />

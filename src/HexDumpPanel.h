@@ -40,7 +40,6 @@ public:
     wxRect GetCellRect(size_t iRow, size_t iCol);
     void OnPaint(wxPaintEvent& event);
     virtual wxCoord OnGetRowHeight(size_t row) const;
-    bool ScrollToRow(size_t row);
 
 private:
     static std::vector<HilightAddr> m_hilightCells;

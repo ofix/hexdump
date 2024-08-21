@@ -23,6 +23,9 @@ TagWindow::~TagWindow()
 
 void TagWindow::OnClick(wxMouseEvent& event)
 {
+    if(m_visibleTags.size() == 0 || m_tags.size() == 0){
+      return;
+    }
     wxPoint pt = event.GetPosition();
     size_t iRowBegin = GetVisibleRowsBegin();
     size_t iRowEnd = GetVisibleRowsEnd();
