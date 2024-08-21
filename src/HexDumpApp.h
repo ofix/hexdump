@@ -12,10 +12,9 @@
 
 #include <wx/app.h>
 
-class HexDumpApp : public wxApp
-{
-    public:
-        virtual bool OnInit();
+class HexDumpApp : public wxApp {
+   public:
+    virtual bool OnInit();
 };
 
-#endif // HEXDUMPAPP_H
+#endif  // HEXDUMPAPP_H

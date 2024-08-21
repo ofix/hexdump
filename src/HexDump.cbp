@@ -13,10 +13,20 @@
 				<Option compiler="gcc" />
 				<Option projectLinkerOptionsRelation="2" />
 				<Compiler>
+					<Add option="-m64" />
 					<Add option="-g" />
-					<Add directory="include" />
-					<Add directory="./" />
+					<Add option="`wx-config  --version=3.1 --static=no --unicode=yes --debug=yes --cflags`" />
+					<Add option="-D_WIN32" />
+					<Add directory="../lib" />
+					<Add directory="../lib/wxWidgets/3.2.4/mingw_x64_windows/mswu" />
+					<Add directory="../src" />
+					<Add directory="../lib/wxWidgets/3.2.4/include" />
+					<Add directory="../lib/curl/include" />
 				</Compiler>
+				<Linker>
+					<Add option="-m64" />
+					<Add directory="../lib" />
+				</Linker>
 			</Target>
 			<Target title="Release">
 				<Option output="bin/Release/hexdump" prefix_auto="1" extension_auto="1" />
@@ -28,40 +38,59 @@
 					<Add option="-O2" />
 					<Add directory="include" />
 					<Add directory="./" />
+					<Add option="`wx-config  --version=3.1 --static=no --unicode=yes --debug=no --cflags`" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add option="`wx-config  --version=3.1 --static=no --unicode=yes --debug=no --libs`" />
 				</Linker>
 			</Target>
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
-			<Add option="-std=gnu++17" />
-			<Add option="-Og" />
-			<Add option="-Winvalid-pch" />
-			<Add option="-include wx_pch.h" />
+			<Add option="-std=c11" />
+			<Add option="-m64" />
+			<Add option="-g" />
 			<Add option="-DWX_PRECOMP" />
-			<Add option="-DWXUSINGDLL" />
-			<Add option="-D__WXGTK3__" />
-			<Add option="-D__WXGTK__" />
-			<Add option="-D_FILE_OFFSET_BITS=64" />
-			<Add directory="../lib/curl/include" />
-			<Add directory="../lib/wxWidgets/3.2.4/aarch64_linux/wx/include/gtk3-unicode-3.2" />
-			<Add directory="../lib/wxWidgets/3.2.4/include" />
-			<Add directory="../src" />
 		</Compiler>
 		<Linker>
 			<Add option="-lpthread" />
-			<Add option="-Wl,-rpath,/home/greatwall/work/iwealth/lib/wxWidgets/3.2.4/aarch64_linux" />
-			<Add option="-lwx_gtk3u_xrc-3.2" />
-			<Add option="-lwx_gtk3u_html-3.2" />
-			<Add option="-lwx_gtk3u_qa-3.2" />
-			<Add option="-lwx_gtk3u_core-3.2" />
-			<Add option="-lwx_baseu_xml-3.2" />
-			<Add option="-lwx_baseu_net-3.2" />
-			<Add option="-lwx_baseu-3.2" />
-			<Add directory="../lib/wxWidgets/3.2.4/aarch64_linux" />
-			<Add directory="../lib" />
+			<Add library="../lib/curl/x86_64_windows/libbrotlicommon.a" />
+			<Add library="../lib/curl/x86_64_windows/libbrotlidec.a" />
+			<Add library="../lib/curl/x86_64_windows/libcrypto.a" />
+			<Add library="../lib/curl/x86_64_windows/libcurl.a" />
+			<Add library="../lib/curl/x86_64_windows/libcurl.dll.a" />
+			<Add library="../lib/curl/x86_64_windows/libnghttp2.a" />
+			<Add library="../lib/curl/x86_64_windows/libnghttp3.a" />
+			<Add library="../lib/curl/x86_64_windows/libngtcp2.a" />
+			<Add library="../lib/curl/x86_64_windows/libngtcp2_crypto_quictls.a" />
+			<Add library="../lib/curl/x86_64_windows/libpsl.a" />
+			<Add library="../lib/curl/x86_64_windows/libssh2.a" />
+			<Add library="../lib/curl/x86_64_windows/libssl.a" />
+			<Add library="../lib/curl/x86_64_windows/libz.a" />
+			<Add library="../lib/curl/x86_64_windows/libzstd.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxbase32u.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxbase32u_net.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxbase32u_xml.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxexpat.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxjpeg.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxmsw32u_adv.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxmsw32u_aui.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxmsw32u_core.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxmsw32u_gl.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxmsw32u_html.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxmsw32u_media.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxmsw32u_propgrid.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxmsw32u_ribbon.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxmsw32u_richtext.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxmsw32u_stc.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxmsw32u_webview.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxmsw32u_xrc.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxpng.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxregexu.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxscintilla.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxtiff.a" />
+			<Add library="../lib/wxWidgets/3.2.4/mingw_x64_windows/libwxzlib.a" />
 		</Linker>
 		<Unit filename="HexDumpApp.cpp" />
 		<Unit filename="HexDumpApp.h" />

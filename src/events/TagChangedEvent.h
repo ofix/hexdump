@@ -20,6 +20,7 @@ class TagChangedEvent : public wxEvent {
     void SetSelection(int n);
     void SetAddr(int addr);
     int GetAddr() const;
+
    private:
     int m_selection;
     int m_addr;

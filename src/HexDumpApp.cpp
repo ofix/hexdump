@@ -13,17 +13,16 @@
 
 #ifdef __BORLANDC__
 #pragma hdrstop
-#endif //__BORLANDC__
+#endif  //__BORLANDC__
 
 #include "HexDumpApp.h"
 #include "HexDumpDialog.h"
 
 IMPLEMENT_APP(HexDumpApp);
 
-bool HexDumpApp::OnInit()
-{
-
-    HexDumpDialog* dlg = new HexDumpDialog(0L,wxID_ANY,wxT("中国长城PCIe调试工具"),wxDefaultPosition,wxSize(1240,960));
+bool HexDumpApp::OnInit() {
+    HexDumpDialog* dlg =
+        new HexDumpDialog(0L, wxID_ANY, wxT("中国长城PCIe调试工具"), wxDefaultPosition, wxSize(1240, 960));
     dlg->Show();
     return true;
 }

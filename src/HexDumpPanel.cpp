@@ -1,17 +1,18 @@
 #include "HexDumpPanel.h"
-#include "util/FileTool.h"
+#include <wx/colour.h>
 #include <wx/dcbuffer.h>
 #include <wx/event.h>
-#include <wx/colour.h>
 #include <algorithm>
+#include <iostream>
+#include "util/FileTool.h"
 
 ///// 文件夹相关头文件
 #include <dirent.h>
 #include <sys/stat.h>
 #include <cstring>
 ///// 16进制格式化相关头文件
-#include <sstream>
 #include <iomanip>  // 添加这一行
+#include <sstream>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -20,187 +21,179 @@
 #define CELL_WIDTH 30
 #define CELL_HEIGHT 30
 
-#define DEFAULT_BACKGROUND wxColor(255,255,255)
+#define DEFAULT_BACKGROUND wxColor(255, 255, 255)
 
-
-HexDumpPanel::HexDumpPanel(wxWindow *parent, wxWindowID id, const wxPoint &pos, const wxSize &size, long style, const wxString &name):
-    wxVScrolledWindow(parent,id,pos,size,style,name)
-{
-    //ctor
-    // 使用自动双缓冲
+HexDumpPanel::HexDumpPanel(wxWindow* parent,
+                           wxWindowID id,
+                           const wxPoint& pos,
+                           const wxSize& size,
+                           long style,
+                           const wxString& name)
+    : wxVScrolledWindow(parent, id, pos, size, style, name) {
+    // ctor
+    //  使用自动双缓冲
     SetBackgroundStyle(wxBG_STYLE_PAINT);
-    Bind(wxEVT_PAINT,&HexDumpPanel::OnPaint,this);
+    Bind(wxEVT_PAINT, &HexDumpPanel::OnPaint, this);
 }
 
-HexDumpPanel::~HexDumpPanel()
-{
-    //dtor
+HexDumpPanel::~HexDumpPanel() {
+    // dtor
 }
 
-std::vector<std::string> HexDumpPanel::GetSubDirs(const std::string& directoryPath)
-{
+std::vector<std::string> HexDumpPanel::GetSubDirs(const std::string& directoryPath) {
     std::vector<std::string> subDirectories;
-
+    subDirectories.push_back("0000_00_01.0");
+#ifdef _WIN32
+    // 文件句柄
+    intptr_t hFile = -1;
+    // 文件信息
+    struct _finddata_t fileinfo;  // 很少用的文件信息读取结构
+    std::string p = directoryPath + "\\*";
+    if ((hFile = _findfirst(p.c_str(), &fileinfo)) != -1) {
+        do {
+            if ((fileinfo.attrib & _A_SUBDIR))  // 判断是否为文件夹
+            {
+                if (strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0) {
+                    subDirectories.push_back(fileinfo.name);  // 保存文件夹名字
+                }
+            }
+        } while (_findnext(hFile, &fileinfo) == 0);  // 寻找下一个，成功返回0，否则-1
+        _findclose(hFile);
+    }
+#else
     DIR* dir;
     struct dirent* ent;
 
-    if ((dir = opendir(directoryPath.c_str()))!= NULL)
-    {
-        while ((ent = readdir(dir))!= NULL)
-        {
+    if ((dir = opendir(directoryPath.c_str())) != NULL) {
+        while ((ent = readdir(dir)) != NULL) {
             std::string entryName = ent->d_name;
-            if (entryName!= "." && entryName!= "..")
-            {
+            if (entryName != "." && entryName != "..") {
                 std::string fullPath = directoryPath + "/" + entryName;
-
-#ifdef _WIN32
-                DWORD fileAttributes = GetFileAttributes(fullPath.c_str());
-                if (fileAttributes!= INVALID_FILE_ATTRIBUTES && (fileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-                {
-#else
                 struct stat st;
-                if (stat(fullPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
-                {
-#endif
+                if (stat(fullPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
                     subDirectories.push_back(entryName);
                 }
             }
         }
         closedir(dir);
-    }
-    else
-    {
+    } else {
         std::cerr << "无法打开目录: " << directoryPath << std::endl;
         return subDirectories;
     }
-
+#endif
     return subDirectories;
 }
 
-void HexDumpPanel::SetPcieConfigDirRoot(const std::string dir_path)
-{
+void HexDumpPanel::SetPcieConfigDirRoot(const std::string dir_path) {
     m_dirRoot = dir_path;
     // 查找所有子目录
-    std::vector<std::string> sub_dirs  = GetSubDirs(m_dirRoot);
-    for(auto& sub_dir: sub_dirs){
-        std::string prefix = sub_dir.substr(0,4);
-        if(prefix == "0000" || prefix == "0001" || prefix == "0002"){
-           m_devices.push_back(sub_dir);
+    std::vector<std::string> sub_dirs = GetSubDirs(m_dirRoot);
+    for (auto& sub_dir : sub_dirs) {
+        std::string prefix = sub_dir.substr(0, 4);
+        if (prefix == "0000" || prefix == "0001" || prefix == "0002") {
+            m_devices.push_back(sub_dir);
         }
     }
 
-    std::sort(m_devices.begin(),m_devices.end(),[](const std::string& a, const std::string& b){
+    std::sort(m_devices.begin(), m_devices.end(), [](const std::string& a, const std::string& b) {
         std::vector<std::string> partsA, partsB;
         size_t startA = 0, startB = 0;
         size_t endA, endB;
-        while ((endA = a.find(':', startA))!= std::string::npos) {
+        while ((endA = a.find(':', startA)) != std::string::npos) {
             partsA.push_back(a.substr(startA, endA - startA));
             startA = endA + 1;
         }
         partsA.push_back(a.substr(startA));
 
-        while ((endB = b.find(':', startB))!= std::string::npos) {
+        while ((endB = b.find(':', startB)) != std::string::npos) {
             partsB.push_back(b.substr(startB, endB - startB));
             startB = endB + 1;
         }
         partsB.push_back(b.substr(startB));
 
         for (size_t i = 0; i < partsA.size() && i < partsB.size(); ++i) {
-            if (partsA[i] < partsB[i]) return true;
-            if (partsA[i] > partsB[i]) return false;
+            if (partsA[i] < partsB[i])
+                return true;
+            if (partsA[i] > partsB[i])
+                return false;
         }
         return partsA.size() < partsB.size();
     });
 
-    for(auto& device: m_devices)
-    {
-        std::string config_file = m_dirRoot + "/"+device+"/config";
+    for (auto& device : m_devices) {
+        std::string config_file = m_dirRoot + "/" + device + "/config";
         m_configFiles.push_back(config_file);
     }
-    if(m_configFiles.size() > 0)
-    {
+    if (m_configFiles.size() > 0) {
         LoadPcieConfigFile(m_configFiles[0]);
     }
     Refresh();
 }
 
-std::vector<std::string> HexDumpPanel::GetPcieDevices()
-{
+std::vector<std::string> HexDumpPanel::GetPcieDevices() {
     return m_devices;
 }
 
-std::vector<std::string> HexDumpPanel::GetPcieConfigFiles()
-{
+std::vector<std::string> HexDumpPanel::GetPcieConfigFiles() {
     return m_configFiles;
 }
 
-std::string HexDumpPanel::GetConfigFilePath(size_t n){
-   if(n>m_configFiles.size()-1){
-      return "";
-   }
-   return m_configFiles[n];
+std::string HexDumpPanel::GetConfigFilePath(size_t n) {
+    if (n > m_configFiles.size() - 1) {
+        return "";
+    }
+    return m_configFiles[n];
 }
 
-void HexDumpPanel::SetVisualSize(size_t size)
-{
-    if(size <0 )
-    {
-        return ;
+void HexDumpPanel::SetVisualSize(size_t size) {
+    if (size < 0) {
+        return;
     }
-    if(size > m_words.size())
-    {
+    if (size > m_words.size()) {
         m_visualSize = m_words.size();
-    }
-    else
-    {
+    } else {
         m_visualSize = size;
     }
 }
 
-void HexDumpPanel::OnPaint(wxPaintEvent& event)
-{
+void HexDumpPanel::OnPaint(wxPaintEvent& event) {
     wxAutoBufferedPaintDC dc(this);
 
     size_t iRowBegin = GetVisibleRowsBegin();
     size_t iRowEnd = GetVisibleRowsEnd();
+
+    dc.SetBrush(*wxWHITE_BRUSH);
+    dc.DrawRectangle(-1, -1, GetSize().GetWidth(), GetRowCount()*CELL_HEIGHT);
+
     int nDigits = GetHexDigits(m_visualSize);
     // wxFont boldFont(12, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD);
     // wxFont normalFont = dc.GetFont();
-    for(size_t iRow=iRowBegin; iRow<iRowEnd; iRow++)
-    {
-        if(iRow==0)
-        {
-            // dc.SetFont(boldFont);
-            for(size_t iCol=0; iCol<16; iCol++)
-            {
-                wxRect rc(GetOffsetX()+iCol*CELL_WIDTH,0,CELL_WIDTH,CELL_HEIGHT);
+    for (size_t iRow = iRowBegin; iRow < iRowEnd; iRow++) {
+        if (iRow == 0) {
+
+            for (size_t iCol = 0; iCol < 16; iCol++) {
+                wxRect rc(GetOffsetX() + iCol * CELL_WIDTH, 0, CELL_WIDTH, CELL_HEIGHT);
                 dc.SetBackgroundMode(wxBRUSHSTYLE_TRANSPARENT);
-                dc.DrawLabel(std::to_string(iCol),rc,wxALIGN_CENTER|wxALIGN_CENTER_VERTICAL);
+                dc.DrawLabel(std::to_string(iCol), rc, wxALIGN_CENTER | wxALIGN_CENTER_VERTICAL);
             }
-        }
-        else
-        {
+        } else {
             size_t iVisualRow = iRow - iRowBegin;
-            std::string addr="0x"+ToHex((iRow-1)*16,nDigits);
+            std::string addr = "0x" + ToHex((iRow - 1) * 16, nDigits);
 
             dc.SetBackgroundMode(wxBRUSHSTYLE_TRANSPARENT);
-            dc.SetTextForeground(wxColor(0,0,0));
-            // dc.SetFont(boldFont);
-            dc.DrawLabel(addr,wxRect(0,iVisualRow*30,GetOffsetX(),CELL_HEIGHT),wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL);
+            dc.SetTextForeground(wxColor(0, 0, 0));
 
-            // dc.SetFont(normalFont);
-            for(size_t iCol=0; iCol<16; iCol++)
-            {
-                word w=m_words[(iRow-1)*16+ iCol];
-                wxRect cell = GetCellRect(iVisualRow-1,iCol);
+            dc.DrawLabel(addr, wxRect(0, iVisualRow * 30, GetOffsetX(), CELL_HEIGHT),
+                         wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL);
 
-                if(w.clr == DEFAULT_BACKGROUND)  // 白底黑字,没有高亮
-                {
+            for (size_t iCol = 0; iCol < 16; iCol++) {
+                word w = m_words[(iRow - 1) * 16 + iCol];
+                wxRect cell = GetCellRect(iVisualRow - 1, iCol);
+
+                if (w.clr == DEFAULT_BACKGROUND) {  // 白底黑字,没有高亮
                     dc.SetBackgroundMode(wxBRUSHSTYLE_TRANSPARENT);
-                    dc.SetTextForeground(wxColor(0,0,0));
-                }
-                else
-                {
+                    dc.SetTextForeground(wxColor(0, 0, 0));
+                } else {
                     wxBrush brush(wxColor(249, 219, 249));
                     dc.SetBrush(brush);
                     dc.SetPen(*wxTRANSPARENT_PEN);
@@ -210,7 +203,7 @@ void HexDumpPanel::OnPaint(wxPaintEvent& event)
                     dc.SetTextForeground(w.clr);
                 }
 
-                dc.DrawLabel(w.hex,cell,wxALIGN_CENTER|wxALIGN_CENTER_VERTICAL);
+                dc.DrawLabel(w.hex, cell, wxALIGN_CENTER | wxALIGN_CENTER_VERTICAL);
             }
         }
     }
@@ -245,102 +238,85 @@ void HexDumpPanel::OnPaint(wxPaintEvent& event)
       */
 }
 
-size_t HexDumpPanel::GetOffsetX()
-{
-    static size_t offset_x = 20+GetHexDigits(m_visualSize)*10;
+size_t HexDumpPanel::GetOffsetX() {
+    static size_t offset_x = 20 + GetHexDigits(m_visualSize) * 10;
     return offset_x;
 }
 
-size_t HexDumpPanel::GetOffsetY()
-{
+size_t HexDumpPanel::GetOffsetY() {
     static size_t offset_y = 30;
     return offset_y;
 }
 
-wxCoord HexDumpPanel::OnGetRowHeight(size_t row) const
-{
+wxCoord HexDumpPanel::OnGetRowHeight(size_t row) const {
     return CELL_HEIGHT;
 }
 
-
-wxRect HexDumpPanel::GetCellRect(size_t iRow, size_t iCol)
-{
+wxRect HexDumpPanel::GetCellRect(size_t iRow, size_t iCol) {
     static size_t offset_x = GetOffsetX();
     static size_t offset_y = GetOffsetY();
-    wxRect rc(offset_x + CELL_WIDTH* iCol, offset_y + CELL_HEIGHT* iRow, CELL_WIDTH,CELL_HEIGHT);
+    wxRect rc(offset_x + CELL_WIDTH * iCol, offset_y + CELL_HEIGHT * iRow, CELL_WIDTH, CELL_HEIGHT);
     return rc;
 }
 
-bool HexDumpPanel::LoadPcieConfigFile(const std::string& file_path)
-{
+bool HexDumpPanel::LoadPcieConfigFile(const std::string& file_path) {
     std::string data = FileTool::LoadFile(file_path);
     m_words.clear();
     m_words.reserve(data.length());
-    for (char c : data)
-    {
+    for (char c : data) {
         word w;
         w.hex = ToHex(static_cast<int>(c) & 0xFF);
-        w.clr = wxColor(255,255,255);
+        w.clr = wxColor(255, 255, 255);
         m_words.push_back(w);
     }
     m_visualSize = m_words.size();
     size_t rows = m_visualSize / 16;
-    SetRowCount(rows+1);
-    for(HilightAddr& cell: m_hilightCells){
-      HilightWords(cell.offset,cell.size,cell.color);
+    SetRowCount(rows + 1);
+    for (HilightAddr& cell : m_hilightCells) {
+        HilightWords(cell.offset, cell.size, cell.color);
     }
     return true;
 }
 
 std::vector<HilightAddr> HexDumpPanel::m_hilightCells = {};
 
-void HexDumpPanel::SetHilightAddrs(const std::vector<HilightAddr>& hilight_addrs){
-   m_hilightCells = hilight_addrs;
-   for(HilightAddr& cell: m_hilightCells){
-      HilightWords(cell.offset,cell.size,cell.color);
-   }
+void HexDumpPanel::SetHilightAddrs(const std::vector<HilightAddr>& hilight_addrs) {
+    m_hilightCells = hilight_addrs;
+    for (HilightAddr& cell : m_hilightCells) {
+        HilightWords(cell.offset, cell.size, cell.color);
+    }
 }
 
-bool HexDumpPanel::HilightWords(size_t pos,size_t word_count,wxColor background_clr)
-{
-    if(pos <0 || pos > m_words.size() -1)
-    {
+bool HexDumpPanel::HilightWords(size_t pos, size_t word_count, wxColor background_clr) {
+    if (pos < 0 || pos > m_words.size() - 1) {
         return false;
     }
-    size_t end_pos = pos+word_count -1;
-    if(end_pos < 0 || end_pos > m_words.size() -1 )
-    {
-        return  false;
+    size_t end_pos = pos + word_count - 1;
+    if (end_pos < 0 || end_pos > m_words.size() - 1) {
+        return false;
     }
-    for(size_t i=pos; i< pos+word_count; i++)
-    {
+    for (size_t i = pos; i < pos + word_count; i++) {
         m_words[i].clr = background_clr;
     }
     return true;
 }
 
-std::string HexDumpPanel::ToHex(int num,int nWidth)
-{
+std::string HexDumpPanel::ToHex(int num, int nWidth) {
     std::stringstream ss;
-    ss << std::uppercase << std::hex << std::setfill('0') <<std::setw(nWidth) << num;
+    ss << std::uppercase << std::hex << std::setfill('0') << std::setw(nWidth) << num;
     std::string result;
     ss >> result;
     return result;
 }
 
-int HexDumpPanel::GetHexDigits(int num)
-{
+int HexDumpPanel::GetHexDigits(int num) {
     int count = 0;
-    if (num == 0)
-    {
+    if (num == 0) {
         return 1;
     }
-    while (num!= 0)
-    {
+    while (num != 0) {
         num >>= 4;  // 每次右移 4 位，相当于除以 16
         count++;
     }
     return count;
 }
-
-

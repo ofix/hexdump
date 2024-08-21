@@ -50,8 +50,8 @@ bool FileTool::IsFileExists(const std::string& path) {
  */
 std::string FileTool::CurrentPath() {
 #ifdef _WIN32
-    char buffer[MAX_PATH];
-    GetModuleFileName(NULL, buffer, MAX_PATH);
+    char buffer[MAX_PATH] = "";
+    // GetModuleFileName(NULL, buffer, MAX_PATH);
 #else
     char buffer[PATH_MAX];
     ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);

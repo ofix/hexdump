@@ -20,11 +20,11 @@
 #endif
 
 #include <wx/button.h>
-#include <wx/statline.h>
 #include <wx/combobox.h>
+#include <wx/statline.h>
 #include "HexDumpPanel.h"
-#include "TagWindow.h"
 #include "PaddingTextCtrl.h"
+#include "TagWindow.h"
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -32,10 +32,14 @@
 /// Class HexDumpDialog
 ///////////////////////////////////////////////////////////////////////////////
 
-class HexDumpDialog : public wxDialog
-{
-public:
-    HexDumpDialog( wxWindow* parent, int id = wxID_ANY, wxString title = wxT("对话框"), wxPoint pos = wxDefaultPosition, wxSize size = wxDefaultSize, int style = wxDEFAULT_DIALOG_STYLE );
+class HexDumpDialog : public wxDialog {
+   public:
+    HexDumpDialog(wxWindow* parent,
+                  int id = wxID_ANY,
+                  wxString title = wxT("对话框"),
+                  wxPoint pos = wxDefaultPosition,
+                  wxSize size = wxDefaultSize,
+                  int style = wxDEFAULT_DIALOG_STYLE);
     void OnPcieDeviceChange(wxCommandEvent& event);
     void OnSaveBtn(wxCommandEvent& event);
     void OnTagChanged(TagChangedEvent& event);
@@ -44,8 +48,7 @@ public:
 
     void OnInputChanged();
 
-
-private:
+   private:
     wxComboBox* m_listBoxDevices;
     HexDumpPanel* m_panel;
     wxButton* m_saveBtn;
@@ -56,4 +59,4 @@ private:
     DECLARE_EVENT_TABLE()
 };
 
-#endif //__HexDumpDialog__
+#endif  //__HexDumpDialog__

@@ -28,10 +28,10 @@ void TagChangedEvent::SetSelection(int n) {
     m_selection = n;
 }
 
-void TagChangedEvent::SetAddr(int addr){
-   m_addr = addr;
+void TagChangedEvent::SetAddr(int addr) {
+    m_addr = addr;
 }
 
-int TagChangedEvent::GetAddr() const{
-   return m_addr;
+int TagChangedEvent::GetAddr() const {
+    return m_addr;
 }
