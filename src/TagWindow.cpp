@@ -91,9 +91,10 @@ std::string TagWindow::GetActiveTagName() {
 
 void TagWindow::OnPaint(wxPaintEvent& event) {
     wxAutoBufferedPaintDC dc(this);
-
+#ifdef _WIN32
     dc.SetBrush(*wxWHITE_BRUSH);
     dc.DrawRectangle(-1, -1, GetSize().GetWidth(), 100000000000);
+#endif // _WIN32
 
     size_t iRowBegin = GetVisibleRowsBegin();
     size_t iRowEnd = GetVisibleRowsEnd();

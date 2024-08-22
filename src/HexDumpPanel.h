@@ -17,6 +17,13 @@ struct HilightAddr {
     wxColor color;
 };
 
+struct BezierCurve{
+    wxPoint ptStart;
+    wxPoint ptEnd;
+    wxPoint ptCtrl1;
+    wxPoint ptCtrl2;
+};
+
 class HexDumpPanel : public wxVScrolledWindow {
    public:
     HexDumpPanel(wxWindow* parent,
@@ -40,11 +47,22 @@ class HexDumpPanel : public wxVScrolledWindow {
     size_t GetOffsetX();
     size_t GetOffsetY();
     wxRect GetCellRect(size_t iRow, size_t iCol);
+    wxRect GetCellRect(size_t byte_offset);
     void OnPaint(wxPaintEvent& event);
     virtual wxCoord OnGetRowHeight(size_t row) const;
 
+    // 使用贝塞尔曲线绘制连接线
+    static void SetJoinCurveBase(int i);
+    void CalcJoinCurves();
+    uint8_t GetHexVal(size_t offset);
+    uint8_t GetPcieCapId(size_t offset);
+    uint8_t GetPcieCapPtr(size_t offset);
+    void hex_output(int id);
+
    private:
     static std::vector<HilightAddr> m_hilightCells;
+    static int m_join_curve_base; // 连接线起始位置
+    std::vector<BezierCurve> m_join_curves; // 需要绘制的贝塞尔曲线
     std::string m_dirRoot;
     size_t m_visualSize;  // 最大显示的区域大小，默认等于PCIe 配置文件大小，允许动态调节
     size_t m_offsetX;

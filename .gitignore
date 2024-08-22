@@ -38,3 +38,4 @@ build/meson/build
 src/obj
 src/bin
 src/wx_pch.h.gch
+*.cbp

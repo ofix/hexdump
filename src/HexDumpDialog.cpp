@@ -42,6 +42,7 @@ HexDumpDialog::HexDumpDialog(wxWindow* parent, int id, wxString title, wxPoint p
     m_panel->SetPcieConfigDirRoot("E:\\dev\\pcie\\devices");
 #else
     m_panel->SetPcieConfigDirRoot("/home/greatwall/work/pcie/devices");
+    m_panel->SetJoinCurveBase(0x34);
 #endif
 
     bSizer1->Add(m_panel, 0, wxALL, 10);
@@ -107,7 +108,10 @@ HexDumpDialog::HexDumpDialog(wxWindow* parent, int id, wxString title, wxPoint p
 
     // 初始化一些数据
     m_textCtrlHighlightAddr->AppendText("0x34,4\n");
-    m_textCtrlHighlightAddr->AppendText("0x40,8\n");
+    m_textCtrlHighlightAddr->AppendText("0x50,2\n");
+    m_textCtrlHighlightAddr->AppendText("0x70,2\n");
+    m_textCtrlHighlightAddr->AppendText("0x90,2\n");
+    m_textCtrlHighlightAddr->AppendText("0xA0,2\n");
     OnInputChanged();
 }
 
