@@ -30,9 +30,11 @@
 HexDumpPanel::HexDumpPanel(wxWindow *parent, wxWindowID id, const wxPoint &pos,
                            const wxSize &size, long style, const wxString &name)
     : wxVScrolledWindow(parent, id, pos, size, style, name) {
+  m_slot = {};
   //  使用自动双缓冲
   SetBackgroundStyle(wxBG_STYLE_PAINT);
   Bind(wxEVT_PAINT, &HexDumpPanel::OnPaint, this);
+  Bind(wxEVT_LEFT_DCLICK, & HexDumpPanel::OnDblClick,this);
 }
 
 HexDumpPanel::~HexDumpPanel() {
@@ -45,8 +47,8 @@ std::vector<HilightAddr> HexDumpPanel::m_hilightCells = {};
 std::vector<std::string>
 HexDumpPanel::GetSubDirs(const std::string &directoryPath) {
   std::vector<std::string> subDirectories;
-  subDirectories.push_back("0000_00_01.0");
 #ifdef _WIN32
+  subDirectories.push_back("0000_00_01.0");
   // 文件句柄
   intptr_t hFile = -1;
   // 文件信息
@@ -88,16 +90,31 @@ HexDumpPanel::GetSubDirs(const std::string &directoryPath) {
   return subDirectories;
 }
 
+void HexDumpPanel::OnDblClick(wxMouseEvent& event){
+  std::cout<<"panel double clicked!"<<std::endl;
+  wxCommandEvent commandEvent(wxEVT_LEFT_DCLICK, GetId());
+  commandEvent.SetEventObject(this);
+  wxPostEvent(GetParent(), commandEvent);
+  event.Skip();
+}
+
+std::vector<uint8_t> HexDumpPanel::GetPhysicalSlot(){
+    return m_slot;
+}
+
 void HexDumpPanel::SetPcieConfigDirRoot(const std::string dir_path) {
   m_dirRoot = dir_path;
   // 查找所有子目录
   std::vector<std::string> sub_dirs = GetSubDirs(m_dirRoot);
+
   for (auto &sub_dir : sub_dirs) {
     std::string prefix = sub_dir.substr(0, 4);
-    if (prefix == "0000" || prefix == "0001" || prefix == "0002") {
+    // if (prefix == "0000" || prefix == "0001" || prefix == "0002") {
+      std::cout<<sub_dir<<std::endl;
       m_devices.push_back(sub_dir);
-    }
+    //}
   }
+
 
   std::sort(m_devices.begin(), m_devices.end(),
             [](const std::string &a, const std::string &b) {
@@ -175,7 +192,6 @@ void HexDumpPanel::OnPaint(wxPaintEvent &event) {
   // wxFONTWEIGHT_BOLD); wxFont normalFont = dc.GetFont();
   for (size_t iRow = iRowBegin; iRow < iRowEnd; iRow++) {
     if (iRow == 0) {
-
       for (size_t iCol = 0; iCol < 16; iCol++) {
         wxRect rc(GetOffsetX() + iCol * CELL_WIDTH, 0, CELL_WIDTH, CELL_HEIGHT);
         dc.SetBackgroundMode(wxBRUSHSTYLE_TRANSPARENT);
@@ -200,7 +216,7 @@ void HexDumpPanel::OnPaint(wxPaintEvent &event) {
           dc.SetBackgroundMode(wxBRUSHSTYLE_TRANSPARENT);
           dc.SetTextForeground(wxColor(0, 0, 0));
         } else {
-          wxBrush brush(wxColor(249, 219, 249));
+          wxBrush brush(w.bk_clr);
           dc.SetBrush(brush);
           dc.SetPen(*wxTRANSPARENT_PEN);
           dc.DrawRectangle(cell);
@@ -218,9 +234,11 @@ void HexDumpPanel::OnPaint(wxPaintEvent &event) {
   if (m_join_curves.size() > 0) {
     wxGraphicsContext *gc = wxGraphicsContext::Create( dc );
     if (gc) {
-      wxPen redPen(wxColor(0, 0, 255), 1, wxPENSTYLE_DOT);
+      wxPen redPen(DEFAULT_HILIGHT_COLOR, 1, wxPENSTYLE_SOLID);
       gc->SetPen(redPen);
       wxGraphicsPath path = gc->CreatePath();
+      dc.SetPen(wxPen(DEFAULT_HILIGHT_COLOR,1,wxPENSTYLE_SOLID));
+      dc.SetBrush(wxBrush(DEFAULT_HILIGHT_COLOR));
 
       int offsetY = iRowBegin * CELL_HEIGHT;
       for (BezierCurve &curve : m_join_curves) {
@@ -229,10 +247,41 @@ void HexDumpPanel::OnPaint(wxPaintEvent &event) {
                              curve.ptCtrl2.x, curve.ptCtrl2.y - offsetY,
                              curve.ptEnd.x, curve.ptEnd.y - offsetY);
         gc->StrokePath(path);
+        // 绘制箭头
+        wxPoint pt1, pt2,ptStart,ptEnd;
+        ptStart.x= curve.ptEnd.x;
+        ptStart.y = curve.ptEnd.y - offsetY - 2-6;
+        ptEnd.x = curve.ptEnd.x;
+        ptEnd.y = curve.ptEnd.y - offsetY-2+ CELL_HEIGHT/2-6;
+        GetTrianglePoints(ptStart,ptEnd,pt1,pt2);
+        //std::cout<<std::dec<<"triangle: "<<ptEnd.x<<","<<ptEnd.y<<","<<pt1.x<<","<<pt1.y<<","<<pt2.x<<","<<pt2.y<<std::endl;
+        DrawTriangle(&dc,&ptEnd,&pt1,&pt2);
       }
       delete gc;
     }
   }
+}
+
+void HexDumpPanel::DrawTriangle(wxDC* pDC,wxPoint* ptEnd, wxPoint* pt1, wxPoint* pt2){
+
+   wxPointList* pPtList = new wxPointList();
+   pPtList->Append(pt1);
+   pPtList->Append(pt2);
+   pPtList->Append(ptEnd);
+   pDC->DrawPolygon(pPtList);
+   // pDC->DrawLine(pt1->x,pt1->y,ptEnd->x,ptEnd->y);
+   // pDC->DrawLine(pt2->x,pt2->y,ptEnd->x,ptEnd->y);
+}
+
+void HexDumpPanel::GetTrianglePoints(wxPoint& ptStart, wxPoint& ptEnd, wxPoint& pt1, wxPoint& pt2){
+    double arrow_length = 8; // 斜线的长度
+    double arrow_degree = 25*M_PI/180.0;
+    double angle = atan2 (ptEnd.y - ptStart.y, ptEnd.x - ptStart.x) + M_PI;
+
+    pt1.x = ptEnd.x + arrow_length * cos(angle - arrow_degree);
+    pt1.y = ptEnd.y + arrow_length * sin(angle - arrow_degree);
+    pt2.x = ptEnd.x + arrow_length * cos(angle + arrow_degree);
+    pt2.y = ptEnd.y + arrow_length * sin(angle + arrow_degree);
 }
 
 size_t HexDumpPanel::GetOffsetX() {
@@ -276,10 +325,15 @@ bool HexDumpPanel::LoadPcieConfigFile(const std::string &file_path) {
   size_t rows = m_visualSize / 16;
   SetRowCount(rows + 1);
   for (HilightAddr &cell : m_hilightCells) {
-    HilightWords(cell.offset, cell.size, cell.color);
+    HilightWords(cell.offset, cell.size, cell.bkColor,cell.color);
   }
   if (m_join_curve_base != -1) {
     CalcJoinCurves();
+  }
+  // 高亮设备type=1的三个关键字段 Primary Bus Number / Secondary Bus Number / Subordinate Bus Number
+  std::string type = m_words.at(0x0e).hex;
+  if(type == "01"){
+     HilightWords(0x19,3,wxColor(162,191,189),wxColor(66,92,90));
   }
   return true;
 }
@@ -288,12 +342,12 @@ void HexDumpPanel::SetHilightAddrs(
     const std::vector<HilightAddr> &hilight_addrs) {
   m_hilightCells = hilight_addrs;
   for (HilightAddr &cell : m_hilightCells) {
-    HilightWords(cell.offset, cell.size, cell.color);
+    HilightWords(cell.offset, cell.size, cell.bkColor,cell.color);
   }
 }
 
 bool HexDumpPanel::HilightWords(size_t pos, size_t word_count,
-                                wxColor background_clr) {
+                                wxColor background_clr,wxColor foreground_clr) {
   if (pos < 0 || pos > m_words.size() - 1) {
     return false;
   }
@@ -302,7 +356,8 @@ bool HexDumpPanel::HilightWords(size_t pos, size_t word_count,
     return false;
   }
   for (size_t i = pos; i < pos + word_count; i++) {
-    m_words[i].clr = background_clr;
+    m_words[i].bk_clr = background_clr;
+    m_words[i].clr = foreground_clr;
   }
   return true;
 }
@@ -357,10 +412,12 @@ void HexDumpPanel::CalcJoinCurves() {
   //uint16_t slot = 0xFFFF; // 最大值表示没有找到物理槽位
   wxRect rect_src = GetCellRect(m_join_curve_base);
   m_rects.push_back(rect_src);
+  HilightWords(m_join_curve_base,1,DEFAULT_HILIGHT_BKGROUND_COLOR,DEFAULT_HILIGHT_COLOR);
+  m_slot.clear();
   do {
     cap_id = GetPcieCapId(cap_ptr);        // 0x50
     next_ptr = GetPcieCapPtr(cap_ptr + 1); // 0x70
-
+    HilightWords(cap_ptr,2,DEFAULT_HILIGHT_BKGROUND_COLOR,DEFAULT_HILIGHT_COLOR);
     hex_output(cap_id);
 	 std::cout<<",";
     hex_output(next_ptr);
@@ -376,6 +433,12 @@ void HexDumpPanel::CalcJoinCurves() {
       wxRect rect_dst = GetCellRect(cap_ptr);
       m_rects.push_back(rect_dst);
       if (cap_id == 0x10) {
+        HilightWords(cap_ptr+0x14,4,wxColor(193, 154, 234),wxColor(33, 4, 64));
+        m_slot.push_back(GetHexVal(cap_ptr+0x14));
+        m_slot.push_back(GetHexVal(cap_ptr+0x15));
+        m_slot.push_back(GetHexVal(cap_ptr+0x16));
+        m_slot.push_back(GetHexVal(cap_ptr+0x17));
+        break;
         //uint32_t cap_slot = pciecfg_get32(pcfg, cap_ptr + 0x14);
         //slot = (cap_slot >> 18) & 0x1FFF; // 31位~19位为物理槽位
       }
@@ -391,7 +454,7 @@ void HexDumpPanel::CalcJoinCurves() {
     curve.ptStart.y = m_rects[i].y + m_rects[i].height/2;
     // 贝塞尔曲线终点
     curve.ptEnd.x = m_rects[i + 1].x + m_rects[i + 1].width / 2;
-    curve.ptEnd.y = m_rects[i + 1].y + m_rects[i].height/2;
+    curve.ptEnd.y = m_rects[i + 1].y + 2;
 
     // 贝塞尔曲线控制点1
     curve.ptCtrl1.x = curve.ptStart.x;

@@ -25,6 +25,7 @@
 #include "HexDumpPanel.h"
 #include "PaddingTextCtrl.h"
 #include "TagWindow.h"
+#include "SlotBinaryDialog.h"
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -47,6 +48,9 @@ class HexDumpDialog : public wxDialog {
     std::vector<HilightAddr> ParseAddrs(const std::string& addrs);
 
     void OnInputChanged();
+    void OnDblClick(wxMouseEvent& event);
+
+    static const long ID_HEXDUMP_PANEL;
 
    private:
     wxComboBox* m_listBoxDevices;

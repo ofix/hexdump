@@ -20,12 +20,13 @@
 #include "HexDumpDialog.h"
 #include "util/Global.h"
 
+
+const long HexDumpDialog::ID_HEXDUMP_PANEL = wxNewId();
+
 ///////////////////////////////////////////////////////////////////////////
 BEGIN_EVENT_TABLE(HexDumpDialog, wxDialog)
 
 END_EVENT_TABLE()
-
-#define DEFAULT_HILIGHT_COLOR wxColor(214, 62, 195)
 
 HexDumpDialog::HexDumpDialog(wxWindow* parent, int id, wxString title, wxPoint pos, wxSize size, int style)
     : wxDialog(parent, id, title, pos, size, style) {
@@ -37,11 +38,11 @@ HexDumpDialog::HexDumpDialog(wxWindow* parent, int id, wxString title, wxPoint p
 
     wxBoxSizer* bSizer1;
     bSizer1 = new wxBoxSizer(wxHORIZONTAL);
-    m_panel = new HexDumpPanel(this, wxID_ANY, wxPoint(10, 8), wxSize(560, 480));
+    m_panel = new HexDumpPanel(this, ID_HEXDUMP_PANEL, wxPoint(10, 8), wxSize(560, 480));
 #ifdef _WIN32
     m_panel->SetPcieConfigDirRoot("E:\\dev\\pcie\\devices");
 #else
-    m_panel->SetPcieConfigDirRoot("/home/greatwall/work/pcie/devices");
+    m_panel->SetPcieConfigDirRoot("/home/greatwall/work/pcie/172.26.15.176/devices");
     m_panel->SetJoinCurveBase(0x34);
 #endif
 
@@ -58,7 +59,7 @@ HexDumpDialog::HexDumpDialog(wxWindow* parent, int id, wxString title, wxPoint p
     bSizer2->Add(staticTextPath, 0, wxTOP | wxRIGHT, 0);
     // wxTextCtrl
     m_textCtrlRootPath =
-        new wxTextCtrl(this, wxID_ANY, wxT("/home/greatwall/work/pcie/devices"), wxDefaultPosition, common_size);
+        new wxTextCtrl(this, wxID_ANY, wxT("/home/greatwall/work/pcie/172.26.15.176/devices"), wxDefaultPosition, common_size);
     m_textCtrlRootPath->SetBackgroundColour(wxColor(230, 230, 230));
     bSizer2->Add(m_textCtrlRootPath, 0, wxTOP | wxRIGHT, 6);
     // wxStaticText
@@ -98,6 +99,7 @@ HexDumpDialog::HexDumpDialog(wxWindow* parent, int id, wxString title, wxPoint p
     m_saveBtn->Bind(wxEVT_BUTTON, &HexDumpDialog::OnSaveBtn, this);
     /////////////////////////////////////////////
 
+
     bSizer1->Add(bSizer2, 0, wxALL | wxEXPAND, 10);
 
     this->SetSizer(bSizer1);
@@ -105,15 +107,25 @@ HexDumpDialog::HexDumpDialog(wxWindow* parent, int id, wxString title, wxPoint p
     bSizer1->Fit(this);
 
     Bind(wxEVT_TAG_CHANGED, &HexDumpDialog::OnTagChanged, this);
+    Bind(wxEVT_LEFT_DCLICK,&HexDumpDialog::OnDblClick,this);
 
     // 初始化一些数据
-    m_textCtrlHighlightAddr->AppendText("0x34,4\n");
-    m_textCtrlHighlightAddr->AppendText("0x50,2\n");
-    m_textCtrlHighlightAddr->AppendText("0x70,2\n");
-    m_textCtrlHighlightAddr->AppendText("0x90,2\n");
-    m_textCtrlHighlightAddr->AppendText("0xA0,2\n");
+    m_textCtrlHighlightAddr->AppendText("0x0e,1\n");
     OnInputChanged();
 }
+
+void HexDumpDialog::OnDblClick(wxMouseEvent& event){
+  if(event.GetId() == ID_HEXDUMP_PANEL){
+   std::vector<uint8_t> slot = m_panel->GetPhysicalSlot();
+   SlotBinaryDialog slotDialog(0,wxID_ANY,wxT("物理槽位"),wxDefaultPosition, wxSize(640, 280));
+   slotDialog.SetSlot(slot);
+   slotDialog.ShowModal();
+     // m_slotDialog->SetSlot(slot);
+  }else{
+      std::cout<<"[self] double clicked!"<<std::endl;
+  }
+}
+
 
 void HexDumpDialog::OnTagChanged(TagChangedEvent& event) {
     int addr = event.GetAddr();
@@ -173,12 +185,14 @@ std::vector<HilightAddr> HexDumpDialog::ParseAddrs(const std::string& addrs) {
             HilightAddr addr;
             addr.offset = hex_to_dec<int>(matches[1]);
             addr.size = 1;
+            addr.bkColor = DEFAULT_HILIGHT_BKGROUND_COLOR;
             addr.color = DEFAULT_HILIGHT_COLOR;
             result.push_back(addr);
         } else if (std::regex_match(line, matches, pattern2)) {
             HilightAddr addr;
             addr.offset = hex_to_dec<int>(matches[1]);
             addr.size = std::stoi(matches[2]);
+            addr.bkColor = DEFAULT_HILIGHT_BKGROUND_COLOR;
             addr.color = DEFAULT_HILIGHT_COLOR;
             result.push_back(addr);
         } else if (std::regex_match(line, matches, pattern3)) {
